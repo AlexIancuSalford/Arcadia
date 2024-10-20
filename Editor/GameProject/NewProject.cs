@@ -119,38 +119,34 @@ namespace Editor.GameProject
 
         private bool ValidatePath()
         {
-            var path = ProjectPath;
-            if (!Path.EndsInDirectorySeparator(path)) { path += @"\"; }
-            path += $@"{ProjectName}";
+            var path = PathValidator.BuildFullPath(ProjectPath, ProjectName);
+            string tempErrorMsg = string.Empty;
 
-            IsValid = false;
-            if (string.IsNullOrWhiteSpace(ProjectName.Trim()))
+            if (!PathValidator.ValidateProjectName(ProjectName, out tempErrorMsg)) 
             {
-                ErrorMsg = "Type in a project name.";
+                ErrorMsg = tempErrorMsg;
+                IsValid = false;
+                return false;
             }
-            else if (ProjectName.IndexOfAny(Path.GetInvalidFileNameChars()) != 1)
+
+            if (!PathValidator.ValidateProjectPath(ProjectPath, out tempErrorMsg)) 
             {
-                ErrorMsg = "Invalid character(s) used in project name.";
+                ErrorMsg = tempErrorMsg;
+                IsValid = false;
+                return false;
             }
-            if (string.IsNullOrWhiteSpace(ProjectPath.Trim()))
+
+            if (!PathValidator.ValidateDirectory(path, out tempErrorMsg)) 
             {
-                ErrorMsg = "Select a valid project folder.";
+                ErrorMsg = tempErrorMsg;
+                IsValid = false;
+                return false;
             }
-            else if (ProjectPath.IndexOfAny(Path.GetInvalidPathChars()) != 1)
-            {
-                ErrorMsg = "Invalid character(s) used in project path.";
-            }
-            else if (Directory.Exists(path) && Directory.EnumerateFileSystemEntries(path).Any())
-            {
-                ErrorMsg = "Selected project folder already exists and is not empty.";
-            }
-            else
-            {
-                ErrorMsg = string.Empty;
-                IsValid = true;
-            }
-            
-            return IsValid;
+
+            // If all validations pass
+            ErrorMsg = string.Empty;
+            IsValid = true;
+            return true;
         }
     }
 }
