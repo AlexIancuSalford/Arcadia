@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization;
 using Editor.Utilities;
 
@@ -44,7 +41,7 @@ namespace Editor.GameProject
             }
         }
         
-        private string _projectPath = $@"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}\Arcadia\";
+        private string _projectPath = $@"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}\ArcadiaProjects\";
         public string ProjectPath
         {
             get => _projectPath;
@@ -112,8 +109,54 @@ namespace Editor.GameProject
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
-                throw;
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        public string CreateProject(ProjectTemplate projectTemplate)
+        {
+            ValidatePath();
+            if (!IsValid)
+            {
+                return string.Empty;
+            }
+
+            if (!Path.EndsInDirectorySeparator(ProjectPath))
+            {
+                ProjectPath += @"\";
+            }
+
+            var path = $@"{ProjectPath}{ProjectName}\";
+
+            try
+            {
+                if (!Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+
+                foreach (var folder in projectTemplate.Folders)
+                {
+                    Directory.CreateDirectory(Path.GetFullPath(Path.Combine(Path.GetDirectoryName(path), folder)));
+                }
+
+                var dirInfo = new DirectoryInfo(path + @".Arcadia\");
+                dirInfo.Attributes |= FileAttributes.Hidden;
+                
+                File.Copy(projectTemplate.IconFilePath, Path.GetFullPath(Path.Combine(dirInfo.FullName, "Icon.png")));
+                File.Copy(projectTemplate.ScreenshotFilePath, Path.GetFullPath(Path.Combine(dirInfo.FullName, "Screenshot.png")));
+
+                var projectXml = File.ReadAllText(projectTemplate.ProjectFilePath);
+                projectXml = string.Format(projectXml, ProjectName, ProjectPath);
+                var projectPath = Path.GetFullPath(Path.Combine(path, $"{ProjectName}{Project.Extension}"));
+                File.WriteAllText(projectPath, projectXml);
+
+                return path;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return string.Empty;
             }
         }
 
